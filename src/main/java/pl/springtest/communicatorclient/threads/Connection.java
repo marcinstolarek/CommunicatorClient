@@ -25,6 +25,8 @@ public class Connection {
         messageHandler = new MessageHandler();
         createReadTransmitConnectionThread();
 
+        clientSocket.sendMessageToServer("Hello"); // TODO - problem with sending messages (at Communicator? - possible)
+
         // closing socket when application is being shutdown
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
@@ -57,7 +59,7 @@ public class Connection {
         tx.start();
         rx.start();
         synchronized (clientSocket) {
-            clientSocket.notifyAll(); // one of them have to start first (both are waiting to notify)
+            clientSocket.notify();
         }
     }
 
@@ -69,12 +71,12 @@ public class Connection {
         public void run() {
             this.setName("Thread - TransmitConnection");
             while (clientSocket.isConnected()) {
-                ClientStatement.Info("TransmitConnection thread - new loop");
                 synchronized (clientSocket) {
                     try {
-                        clientSocket.wait(5000);
+                        clientSocket.notify(); // wake up ReadConnection thread
+                        clientSocket.wait();
                     } catch (InterruptedException e) {
-                        ; // do nothing
+                        ClientStatement.Error("InterruptedException - TransmitConnection occurred.", ClientStatement.NO_EXIT);
                     } finally {
                         if (!messageHandler.isMessagesToServerEmpty()) {
                             List<String> newMessagesToServer = messageHandler.GetMessagesToServerAndClear();
@@ -82,7 +84,6 @@ public class Connection {
                             for (String message : newMessagesToServer)
                                 clientSocket.sendMessageToServer(message);
                         }
-                        clientSocket.notify();
                     }
                 }
             }
@@ -99,18 +100,17 @@ public class Connection {
             this.setName("Thread - ReadConnection");
             while (clientSocket.isConnected()) {
                 synchronized (clientSocket) {
-                    ClientStatement.Info("ReadConnection thread - new loop");
                     try {
-                        clientSocket.wait(5000);
+                        clientSocket.notify(); // wake up TransmitConnection thread
+                        clientSocket.wait();
                     } catch (InterruptedException e) {
-                        ; // do nothing
+                        ClientStatement.Error("InterruptedException - ReadConnection occurred.", ClientStatement.NO_EXIT);
                     } finally {
                         if (clientSocket.isConnected()) {
                             String message = clientSocket.readMessageFromServer();
                             if (message != null)
                                 messageHandler.addMessageFromServer(message);
                         }
-                        clientSocket.notify();
                     }
                 }
             }

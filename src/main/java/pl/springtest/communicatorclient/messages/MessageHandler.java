@@ -65,6 +65,8 @@ public class MessageHandler {
                     try {
                         messagesFromServer.wait(); // wait for any change (new message added)
                     } catch (InterruptedException e) {
+                        ClientStatement.Error("InterruptedException - WriteOutput occurred.", ClientStatement.NO_EXIT);
+                    } finally {
                         // writing messages from list and then delete it from list - list is only for new unhandled messages
                         while (messagesFromServer.size() > 0) {
                             System.out.println(messagesFromServer.get(0));
