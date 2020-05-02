@@ -1,5 +1,6 @@
-package pl.springtest.communicatorclient.sockets;
+package pl.springtest.communicatorclient.toServerConnection;
 
+import pl.springtest.communicatorclient.info.AppInfo;
 import pl.springtest.communicatorclient.statement.ClientStatement;
 
 import java.io.BufferedReader;
@@ -35,12 +36,34 @@ public class ClientSocketHandler {
     }
 
     /**
+     * Prepare text message to one line format (all expect MESSAGE ended by ";" - MESSAGE ends by "\n"):
+     * "VERSION_INFO: " + version (eg. "2.1.3;")
+     * "CLIENT_NAME: " + name (eq. "Adam;")
+     * "GROUP_ID: " + groupId (eq. "Group123;"
+     * "EXTRA: " + extra info to server (eg. "SHUTDOWN;" - client is shutting down)
+     * "MESSAGE: " + message from parameter
+     * EXTRA list:
+     * - SHUTDOWN - client is shutting down (since ver. 1.0.0)
+     * @param message - text message to server
+     * @return prepared string with data
+     */
+    private static String prepareMessage(String message) {
+        String preparedMessage = "VERSION_INFO: " + AppInfo.VERSION_INFO + ";";
+        preparedMessage += "CLIENT_NAME: " + ClientData.name + ";";
+        preparedMessage += "GROUP_ID: " + ClientData.groupID + ";";
+        preparedMessage += "EXTRA: ;";
+        preparedMessage += "MESSAGE: " + message + "\n";
+
+        return preparedMessage;
+    }
+
+    /**
      * Send message to server
      * @param message - data to send
      */
     public void sendMessageToServer(String message) {
         ClientStatement.Info("Message to server: " + message);
-        outMessage.write(message + "\n");
+        outMessage.write(this.prepareMessage(message));
         outMessage.flush();
     }
 

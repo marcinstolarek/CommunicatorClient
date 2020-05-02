@@ -1,7 +1,6 @@
-package pl.springtest.communicatorclient.threads;
+package pl.springtest.communicatorclient.toServerConnection;
 
 import pl.springtest.communicatorclient.messages.MessageHandler;
-import pl.springtest.communicatorclient.sockets.ClientSocketHandler;
 import pl.springtest.communicatorclient.statement.ClientStatement;
 
 import java.util.List;
@@ -19,8 +18,12 @@ public class Connection {
      * Have ShutdownHook - to close socket
      * @param addressIP - server address IP
      * @param port - servers port to connect
+     * @param clientName - client name which is added to messages data
+     * @param groupId - communicator group ID which is added to messages data
      */
-    public Connection(String addressIP, int port) {
+    public Connection(String addressIP, int port, String clientName, String groupId) {
+        ClientData.name = clientName;
+        ClientData.groupID = groupId;
         activateConnection(addressIP, port);
         messageHandler = new MessageHandler();
         createReadTransmitConnectionThread();
