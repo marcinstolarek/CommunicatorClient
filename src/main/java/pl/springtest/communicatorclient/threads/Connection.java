@@ -25,8 +25,6 @@ public class Connection {
         messageHandler = new MessageHandler();
         createReadTransmitConnectionThread();
 
-        clientSocket.sendMessageToServer("Hello"); // TODO - problem with sending messages (at Communicator? - possible)
-
         // closing socket when application is being shutdown
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
@@ -58,9 +56,6 @@ public class Connection {
         ReadConnection rx = new ReadConnection();
         tx.start();
         rx.start();
-        synchronized (clientSocket) {
-            clientSocket.notify();
-        }
     }
 
     /**

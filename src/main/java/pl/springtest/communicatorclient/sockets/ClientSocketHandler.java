@@ -39,7 +39,8 @@ public class ClientSocketHandler {
      * @param message - data to send
      */
     public void sendMessageToServer(String message) {
-        outMessage.write(message);
+        ClientStatement.Info("Message to server: " + message);
+        outMessage.write(message + "\n");
         outMessage.flush();
     }
 
