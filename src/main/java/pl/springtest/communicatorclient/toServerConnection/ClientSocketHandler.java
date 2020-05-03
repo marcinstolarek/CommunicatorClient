@@ -37,33 +37,62 @@ public class ClientSocketHandler {
 
     /**
      * Prepare text message to one line format (all expect MESSAGE ended by ";" - MESSAGE ends by "\n"):
-     * "VERSION_INFO: " + version (eg. "2.1.3;")
-     * "CLIENT_NAME: " + name (eq. "Adam;")
-     * "GROUP_ID: " + groupId (eq. "Group123;"
-     * "EXTRA: " + extra info to server (eg. "SHUTDOWN;" - client is shutting down)
-     * "MESSAGE: " + message from parameter
+     * "VERSION_INFO:" + version (eg. "2.1.3;")
+     * "CLIENT_NAME:" + name (eq. "Adam;")
+     * "GROUP_ID:" + groupId (eq. "Group123;"
+     * "EXTRA:" + extra info to server (eg. "SHUTDOWN;" - client is shutting down)
+     * "MESSAGE:" + message from parameter
      * EXTRA list:
      * - SHUTDOWN - client is shutting down (since ver. 1.0.0)
+     * - NEW_CONNECTION - client send information about new connection to server (since ver. 1.0.0)
+     * GROUP_ID can be "BROADCAST" - sending to everyone, but message should be from server, not client
      * @param message - text message to server
+     * @param isShuttingDown - information about being shutting down
      * @return prepared string with data
      */
-    private static String prepareMessage(String message) {
-        String preparedMessage = "VERSION_INFO: " + AppInfo.VERSION_INFO + ";";
-        preparedMessage += "CLIENT_NAME: " + ClientData.name + ";";
-        preparedMessage += "GROUP_ID: " + ClientData.groupID + ";";
-        preparedMessage += "EXTRA: ;";
-        preparedMessage += "MESSAGE: " + message + "\n";
+    private static String prepareMessage(String message, boolean isShuttingDown) {
+        String preparedMessage = "VERSION_INFO:" + AppInfo.VERSION_INFO + ";";
+        preparedMessage += "CLIENT_NAME:" + ClientData.name + ";";
+        preparedMessage += "GROUP_ID:" + ClientData.groupID + ";";
+        if (isShuttingDown)
+            preparedMessage += "EXTRA:SHUTDOWN;";
+        else
+            preparedMessage += "EXTRA:;";
+        preparedMessage += "MESSAGE:" + message + "\n";
 
         return preparedMessage;
     }
 
     /**
+     * Decode message to String with userName and message
+     * @param message - full message to decode
+     * @return clientName: message
+     */
+    private static String decodeMessage(String message) {
+        int clientNameStartIndex = message.indexOf("CLIENT_NAME:") + 13; // 13 is number of characters in "CLIENT_NAME:" + 1
+        int clientNameEndIndex = message.indexOf(";", clientNameStartIndex) - 1;
+        int messageStartIndex = message.indexOf("MESSAGE:") + 10; // 10 is number of characters in "MESSAGE:" + 1
+        int messageEndIndex = message.length();
+        return message.substring(clientNameStartIndex, clientNameEndIndex) + ": " + message.substring(messageStartIndex, messageEndIndex);
+    }
+
+    private static boolean isServerShuttingDown(String message) {
+        int messageStartIndex = message.indexOf("MESSAGES:") + 10; // 10 is number of characters in "MESSAGE:" + 1
+        int shutdownStartIndex = message.indexOf("EXTRA:SHUTDOWN;");
+        if (shutdownStartIndex != -1 && shutdownStartIndex < messageStartIndex) // not in MESSAGE: body and EXTRA:SHUTDOWN; exist - server is shutting down
+            return true;
+        return false;
+    }
+
+    /**
      * Send message to server
      * @param message - data to send
+     * @param isShuttingDown - information about client is shutting down
      */
-    public void sendMessageToServer(String message) {
-        ClientStatement.Info("Message to server: " + message);
-        outMessage.write(this.prepareMessage(message));
+    public void sendMessageToServer(String message, boolean isShuttingDown) {
+        //ClientStatement.Info("Message to server: " + message);
+        ClientStatement.Info(this.prepareMessage(message, isShuttingDown));
+        outMessage.write(this.prepareMessage(message, isShuttingDown));
         outMessage.flush();
     }
 
@@ -87,7 +116,14 @@ public class ClientSocketHandler {
         } catch (IOException e) {
             ClientStatement.Error("IOException occurred when reading message from server.", ClientStatement.DO_EXIT);
         }
-        return message;
+
+        if (isServerShuttingDown(message)) {
+            ClientStatement.Info("Server is shutting down.");
+            this.closeSocket();
+            return null;
+        }
+
+        return this.decodeMessage(message);
     }
 
     /**
@@ -103,6 +139,7 @@ public class ClientSocketHandler {
      */
     public void closeSocket() {
         boolean error = false;
+
         try {
             error = false;
             if (clientSocket != null)

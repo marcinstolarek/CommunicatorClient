@@ -9,6 +9,8 @@ import pl.springtest.communicatorclient.toServerConnection.Connection;
  */
 public class CommunicatorClientApplication {
     public static void main(String[] args) {
-        Connection serverConnection = new Connection("localhost", 1234, "Client", "Group1");
+        Connection serverConnection = new Connection("localhost", 1234, args[0], "Group1");
     }
 }
+
+//TODO - initial messages to server

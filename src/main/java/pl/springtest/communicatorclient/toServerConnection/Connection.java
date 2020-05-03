@@ -34,6 +34,7 @@ public class Connection {
             public void run() {
                 ClientStatement.Info("CTRL+C");
                 synchronized(clientSocket) {
+                    clientSocket.sendMessageToServer("LOGOUT", true);
                     clientSocket.closeSocket();
                     clientSocket.notifyAll();
                 }
@@ -80,7 +81,7 @@ public class Connection {
                             List<String> newMessagesToServer = messageHandler.GetMessagesToServerAndClear();
 
                             for (String message : newMessagesToServer)
-                                clientSocket.sendMessageToServer(message);
+                                clientSocket.sendMessageToServer(message, false);
                         }
                     }
                 }
