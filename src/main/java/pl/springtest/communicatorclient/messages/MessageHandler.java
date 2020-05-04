@@ -52,9 +52,6 @@ public class MessageHandler {
                 }
             }
             ClientStatement.Info("End of ReadInput thread");
-            synchronized (messagesFromServer) {
-                messagesFromServer.notify(); // wake up WriteOutput thread before closing this thread
-            }
         }
     }
 
@@ -117,8 +114,9 @@ public class MessageHandler {
 
     public void resetConnectionToServerOK() {
         connectionToServerOK = false;
-        readInput.interrupt();
-        writeOutput.interrupt();
+        synchronized (messagesFromServer) {
+            messagesFromServer.notify(); // wake up WriteOutput thread before closing this thread
+        }
     }
 
     @Override
