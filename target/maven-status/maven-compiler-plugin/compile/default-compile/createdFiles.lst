@@ -8,6 +8,6 @@ pl/springtest/communicatorclient/CommunicatorClientApplication.class
 pl/springtest/communicatorclient/statement/ClientStatement.class
 pl/springtest/communicatorclient/toServerConnection/ClientSocketHandler.class
 pl/springtest/communicatorclient/toServerConnection/Connection$ReadConnection.class
+pl/springtest/communicatorclient/toServerConnection/ExtraInfo.class
 pl/springtest/communicatorclient/messages/MessageHandler$ReadInput.class
-pl/springtest/communicatorclient/messages/MessageHandler$1.class
 pl/springtest/communicatorclient/messages/MessageHandler.class

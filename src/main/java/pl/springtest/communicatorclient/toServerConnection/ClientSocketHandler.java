@@ -33,6 +33,8 @@ public class ClientSocketHandler {
         } catch (IOException e) {
             ClientStatement.Error("IOException occurred.", ClientStatement.DO_EXIT);
         }
+        // initial message to server
+        sendMessageToServer("LOGIN", ExtraInfo.NEW_CONNECTION);
     }
 
     /**
@@ -47,15 +49,17 @@ public class ClientSocketHandler {
      * - NEW_CONNECTION - client send information about new connection to server (since ver. 1.0.0)
      * GROUP_ID can be "BROADCAST" - sending to everyone, but message should be from server, not client
      * @param message - text message to server
-     * @param isShuttingDown - information about being shutting down
+     * @param extraInfo - information about extra info to add (eg. SHUTDOWN)
      * @return prepared string with data
      */
-    private static String prepareMessage(String message, boolean isShuttingDown) {
+    private static String prepareMessage(String message, ExtraInfo extraInfo) {
         String preparedMessage = "VERSION_INFO:" + AppInfo.VERSION_INFO + ";";
         preparedMessage += "CLIENT_NAME:" + ClientData.name + ";";
         preparedMessage += "GROUP_ID:" + ClientData.groupID + ";";
-        if (isShuttingDown)
+        if (extraInfo == ExtraInfo.SHUTDOWN)
             preparedMessage += "EXTRA:SHUTDOWN;";
+        else if (extraInfo == ExtraInfo.NEW_CONNECTION)
+            preparedMessage += "EXTRA:NEW_CONNECTION;";
         else
             preparedMessage += "EXTRA:;";
         preparedMessage += "MESSAGE:" + message + "\n";
@@ -69,15 +73,15 @@ public class ClientSocketHandler {
      * @return clientName: message
      */
     private static String decodeMessage(String message) {
-        int clientNameStartIndex = message.indexOf("CLIENT_NAME:") + 13; // 13 is number of characters in "CLIENT_NAME:" + 1
-        int clientNameEndIndex = message.indexOf(";", clientNameStartIndex) - 1;
-        int messageStartIndex = message.indexOf("MESSAGE:") + 10; // 10 is number of characters in "MESSAGE:" + 1
+        int clientNameStartIndex = message.indexOf("CLIENT_NAME:") + 12; // 12 is number of characters in "CLIENT_NAME:"
+        int clientNameEndIndex = message.indexOf(";", clientNameStartIndex);
+        int messageStartIndex = message.indexOf("MESSAGE:") + 8; // 8 is number of characters in "MESSAGE:"
         int messageEndIndex = message.length();
         return message.substring(clientNameStartIndex, clientNameEndIndex) + ": " + message.substring(messageStartIndex, messageEndIndex);
     }
 
     private static boolean isServerShuttingDown(String message) {
-        int messageStartIndex = message.indexOf("MESSAGES:") + 10; // 10 is number of characters in "MESSAGE:" + 1
+        int messageStartIndex = message.indexOf("MESSAGE:");
         int shutdownStartIndex = message.indexOf("EXTRA:SHUTDOWN;");
         if (shutdownStartIndex != -1 && shutdownStartIndex < messageStartIndex) // not in MESSAGE: body and EXTRA:SHUTDOWN; exist - server is shutting down
             return true;
@@ -87,12 +91,12 @@ public class ClientSocketHandler {
     /**
      * Send message to server
      * @param message - data to send
-     * @param isShuttingDown - information about client is shutting down
+     * @param extraInfo - information about extra info
      */
-    public void sendMessageToServer(String message, boolean isShuttingDown) {
+    public void sendMessageToServer(String message, ExtraInfo extraInfo) {
         //ClientStatement.Info("Message to server: " + message);
-        ClientStatement.Info(this.prepareMessage(message, isShuttingDown));
-        outMessage.write(this.prepareMessage(message, isShuttingDown));
+        ClientStatement.Info(this.prepareMessage(message, extraInfo));
+        outMessage.write(this.prepareMessage(message, extraInfo));
         outMessage.flush();
     }
 
@@ -118,7 +122,7 @@ public class ClientSocketHandler {
         }
 
         if (isServerShuttingDown(message)) {
-            ClientStatement.Info("Server is shutting down.");
+            ClientStatement.Info("Server is shutting down. I'm closing application");
             this.closeSocket();
             return null;
         }

@@ -1,6 +1,7 @@
 package pl.springtest.communicatorclient.messages;
 
 import pl.springtest.communicatorclient.statement.ClientStatement;
+import pl.springtest.communicatorclient.toServerConnection.ExtraInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +15,8 @@ public class MessageHandler {
     private List<String> messagesToServer;
     private List<String> messagesFromServer;
     private boolean connectionToServerOK;
+    private ReadInput readInput = new ReadInput();
+    private WriteOutput writeOutput = new WriteOutput();
 
     /**
      * Create clean list of messages to and from server
@@ -25,8 +28,7 @@ public class MessageHandler {
         connectionToServerOK = true;
 
         // activate threads for writing and reading
-        ReadInput readInput = new ReadInput();
-        WriteOutput writeOutput = new WriteOutput();
+
         readInput.start();;
         writeOutput.start();
     }
@@ -50,6 +52,9 @@ public class MessageHandler {
                 }
             }
             ClientStatement.Info("End of ReadInput thread");
+            synchronized (messagesFromServer) {
+                messagesFromServer.notify(); // wake up WriteOutput thread before closing this thread
+            }
         }
     }
 
@@ -112,6 +117,8 @@ public class MessageHandler {
 
     public void resetConnectionToServerOK() {
         connectionToServerOK = false;
+        readInput.interrupt();
+        writeOutput.interrupt();
     }
 
     @Override

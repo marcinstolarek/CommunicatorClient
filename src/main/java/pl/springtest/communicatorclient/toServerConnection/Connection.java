@@ -34,7 +34,7 @@ public class Connection {
             public void run() {
                 ClientStatement.Info("CTRL+C");
                 synchronized(clientSocket) {
-                    clientSocket.sendMessageToServer("LOGOUT", true);
+                    clientSocket.sendMessageToServer("LOGOUT", ExtraInfo.SHUTDOWN);
                     clientSocket.closeSocket();
                     clientSocket.notifyAll();
                 }
@@ -81,12 +81,16 @@ public class Connection {
                             List<String> newMessagesToServer = messageHandler.GetMessagesToServerAndClear();
 
                             for (String message : newMessagesToServer)
-                                clientSocket.sendMessageToServer(message, false);
+                                clientSocket.sendMessageToServer(message, ExtraInfo.NO_INFO);
                         }
                     }
                 }
             }
             ClientStatement.Info("End of TransmitConnection thread");
+            synchronized (clientSocket) {
+                clientSocket.notify(); // wake up ReadConnection thread
+            }
+            messageHandler.resetConnectionToServerOK();
         }
     }
 
@@ -114,6 +118,10 @@ public class Connection {
                 }
             }
             ClientStatement.Info("End of ReadConnection thread");
+            synchronized (clientSocket) {
+                clientSocket.notify(); // wake up TransmitConnection thread
+            }
+            messageHandler.resetConnectionToServerOK();
         }
     }
 

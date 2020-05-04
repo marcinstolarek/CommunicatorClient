@@ -2,6 +2,7 @@
 /home/marcin/Java/Projekty/CommunicatorClient/src/main/java/pl/springtest/communicatorclient/statement/ClientStatement.java
 /home/marcin/Java/Projekty/CommunicatorClient/src/main/java/pl/springtest/communicatorclient/toServerConnection/ClientSocketHandler.java
 /home/marcin/Java/Projekty/CommunicatorClient/src/main/java/pl/springtest/communicatorclient/toServerConnection/Connection.java
+/home/marcin/Java/Projekty/CommunicatorClient/src/main/java/pl/springtest/communicatorclient/toServerConnection/ExtraInfo.java
 /home/marcin/Java/Projekty/CommunicatorClient/src/main/java/pl/springtest/communicatorclient/info/AppInfo.java
 /home/marcin/Java/Projekty/CommunicatorClient/src/main/java/pl/springtest/communicatorclient/toServerConnection/ClientData.java
 /home/marcin/Java/Projekty/CommunicatorClient/src/main/java/pl/springtest/communicatorclient/messages/MessageHandler.java
